@@ -1,0 +1,14 @@
+{
+    "name": "i3bepb/dnmp",
+    "description": "Набор docker, nginx, mysql, php-fpm",
+    "repositories": [
+        {
+            "type":"git",
+            "url":"https://github.com/i3bepb/lib"
+        }
+    ],
+    "require": {
+        "i3bepb/lib":"dev-master",
+        "symfony/dotenv": "^3.4"
+    }
+}

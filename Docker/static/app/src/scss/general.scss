@@ -1,0 +1,16 @@
+@import "mixin/fonts.scss";
+@import "mixin/transform.scss";
+
+body {
+  width:100%;
+  background-color:#ffffff;
+}
+.wrap_404 {
+  margin:300px auto;
+  font: 20em Arial;
+  color:#000000;
+  width:535px;
+  height:340px;
+  background: #ff1846;
+  @include transform(rotate(-13deg) skew(-13deg));
+}
