@@ -1,6 +1,4 @@
 .env
-Docker/mysql/dump/*
-Docker/**/log/*
 Docker/static/app/dist
 Docker/static/app/node_modules
-vendor/*
+application/vendor/*

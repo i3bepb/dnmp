@@ -7,3 +7,5 @@ MAINTAINER i3bepb
 RUN apk update && apk add --no-cache git \
     && curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/bin --filename=composer \
     && docker-php-ext-install mysqli pdo pdo_mysql
+
+WORKDIR /var/www

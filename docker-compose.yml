@@ -13,11 +13,29 @@ services:
       - .env
     command: ['mysqld', '--character-set-server=${DNMP_MYSQL_CHARSET}', '--collation-server=${DNMP_MYSQL_CHARSET_COLLATE}', '--port=${DNMP_MYSQL_PORT}']
     volumes:
-      - ./Docker/mysql/install_dump.sh:/root/install_dump.sh
+      - ./Docker/mysql/script:/root/script
       - ./Docker/mysql/dump:/root/dump:ro
       - ./Docker/mysql/config/mysql.cnf:/etc/mysql/conf.d/mysql.cnf:ro
     ports:
       - "${DNMP_MYSQL_PORT}:${DNMP_MYSQL_PORT}"
+  nginx:
+    build: ./Docker/nginx/
+    networks:
+      - net
+    env_file:
+      - .env
+    volumes:
+      - ./Docker/nginx/config/site.conf:/etc/nginx/template/site.conf:ro
+      - ./Docker/nginx/config/general.conf:/etc/nginx/conf.d/general.conf:ro
+      - ./Docker/nginx/log:/var/log/nginx/${DNMP_NGINX_DOMAIN}
+      - ./application/html:/usr/share/nginx/${DNMP_NGINX_DOMAIN}/www
+      - ./Docker/nginx/script:/root/script
+      - ./Docker/static/app/dist:/usr/share/nginx/static.${DNMP_NGINX_DOMAIN}/dist
+    depends_on:
+      - php
+    ports:
+      - "${DNMP_NGINX_PORT}:${DNMP_NGINX_PORT}/tcp"
+    command: /bin/bash -c "/root/script/template_nginx.sh /etc/nginx/template/site.conf > /etc/nginx/conf.d/default.conf && exec nginx-debug -g 'daemon off;'"
   php:
     &base-php-fpm
       build: ./Docker/php-fpm/
@@ -30,34 +48,25 @@ services:
       volumes:
         - ./Docker/php-fpm/config/www.conf:/usr/local/etc/php-fpm.d/www.conf:ro
         - ./Docker/php-fpm/config/php.ini:/usr/local/etc/php/php.ini:ro
-        - ./public:/var/www/html:rw
+        - ./application:/var/www
         - ./Docker/php-fpm/log:/var/log
-        - ./composer.json:/var/www/composer.json:rw
-        - ./composer.lock:/var/www/composer.lock:rw
-        - ./.env:/var/www/.env:rw
+#        - ./.env:/var/www/.env:rw
       expose:
-        - 9000
-      working_dir: /var/www
+        - ${DNMP_PHP_PORT}
 #  phpfpm2:
 #    <<: *base-php-fpm
-  nginx:
-    build: ./Docker/nginx/
+  redis:
+    image: redis:5-alpine
     networks:
       - net
     env_file:
       - .env
     volumes:
-      - ./Docker/nginx/config/site.conf:/etc/nginx/template/site.conf:ro
-      - ./Docker/nginx/config/general.conf:/etc/nginx/conf.d/general.conf:ro
-      - ./Docker/nginx/log:/var/log/nginx/${DNMP_NGINX_DOMAIN}
-      - ./public:/usr/share/nginx/${DNMP_NGINX_DOMAIN}/www
-      - ./Docker/nginx/scripts/template_nginx.sh:/root/template_nginx.sh
-      - ./Docker/static/app/dist:/usr/share/nginx/static.${DNMP_NGINX_DOMAIN}/dist
-    depends_on:
-      - php
-    ports:
-      - "${DNMP_NGINX_PORT}:${DNMP_NGINX_PORT}/tcp"
-    command: /bin/bash -c "/root/template_nginx.sh /etc/nginx/template/site.conf > /etc/nginx/conf.d/default.conf && exec nginx-debug -g 'daemon off;'"
+      - ./Docker/redis/config/redis.conf:/usr/local/etc/redis/redis.conf
+    command:
+      ['redis-server', '/usr/local/etc/redis/redis.conf', '--port', '${REDIS_PORT}', '--requirepass', '${REDIS_PASSWORD}']
+    expose:
+      - ${REDIS_PORT}
   static:
     build: ./Docker/static/
     networks:
